@@ -151,7 +151,7 @@ class PHP_Token_Stream implements ArrayAccess, Countable, SeekableIterator
 
     /**
      * Scans the source for sequences of characters and converts them into a
-     * stream of tokens.
+     * stream of tokens. Clobbers any existing tokens in $this->tokens.
      *
      * @param string $sourceCode
      */
@@ -163,6 +163,7 @@ class PHP_Token_Stream implements ArrayAccess, Countable, SeekableIterator
 
         $lastNonWhitespaceTokenWasDoubleColon = false;
 
+        $this->tokens = new SplFixedArray($numTokens);
         for ($i = 0; $i < $numTokens; ++$i) {
             $token = $tokens[$i];
             unset($tokens[$i]);
@@ -530,7 +531,9 @@ class PHP_Token_Stream implements ArrayAccess, Countable, SeekableIterator
      */
     public function offsetGet($offset)
     {
-        if (!$this->offsetExists($offset)) {
+        try {
+            return $this->tokens[$offset];
+        } catch (RuntimeException $e) {
             throw new OutOfBoundsException(
                 sprintf(
                     'No token at position "%s"',
@@ -538,8 +541,6 @@ class PHP_Token_Stream implements ArrayAccess, Countable, SeekableIterator
                 )
             );
         }
-
-        return $this->tokens[$offset];
     }
 
     /**
